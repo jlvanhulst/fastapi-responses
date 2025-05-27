@@ -1,0 +1,109 @@
+# FastAPI Prompt Assistant
+
+A FastAPI-based assistant that uses the `Prompt` class from vic-20 for AI interactions instead of the OpenAI Assistants API.
+
+## Overview
+
+This project is a reimplementation of the fastapi-assistant repository, replacing the OpenAI Assistants API with a more flexible prompt-based system from vic-20. It maintains the core functionality of the original project while introducing more flexibility through markdown-based prompt templates.
+
+## Features
+
+- **Prompt-based AI interactions**: Uses the `Prompt` class from vic-20 for flexible AI interactions
+- **Multiple model support**: Works with both OpenAI and Gemini models
+- **Tool integration**: Supports webscrape and other tools
+- **File handling**: Upload and process files for analysis
+- **Conversation continuity**: Maintains conversation context using previous response tracking
+- **Prompt templates**: Define assistant behavior using markdown templates
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/fastapi-prompt-assistant.git
+cd fastapi-prompt-assistant
+```
+
+2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+3. Set up environment variables:
+Create a `.env` file with the following variables:
+```
+OPENAI_API_KEY=your_openai_api_key
+# Optional: GEMINI_API_KEY=your_gemini_api_key
+```
+
+## Usage
+
+1. Start the server:
+```bash
+uvicorn application:application --reload
+```
+
+2. Access the chat interface:
+Open your browser and navigate to `http://localhost:8000/chat/`
+
+3. Use the API endpoints:
+- `/demo/list_assistants`: List available assistants
+- `/demo/joke`: Get a joke from the joker assistant
+- `/demo/assistant/{assistant_name}`: Run a specific assistant with a prompt
+- `/demo/upload_file`: Upload a file for use with assistants
+
+## Prompt Templates
+
+Assistants are defined using markdown templates in the `prompts/` directory. Each template includes:
+
+- **Instructions**: Behavior guidelines for the assistant
+- **Model**: The AI model to use (OpenAI or Gemini)
+- **Tools**: Available tools for the assistant
+- **Prompt**: The template for the prompt with variable placeholders
+- **Response**: Guidelines for response formatting
+
+Example template:
+```markdown
+@@ Instructions
+You are a helpful assistant that provides accurate and concise information.
+
+@@ Model
+openai/gpt-4
+
+@@ Tools
+webscrape
+
+@@ Prompt
+{{content}}
+
+@@ Response
+Respond in a helpful, accurate, and concise manner.
+```
+
+## Creating New Assistants
+
+To create a new assistant:
+
+1. Create a new markdown file in the `prompts/` directory (e.g., `prompts/my_assistant.md`)
+2. Define the assistant behavior using the template format
+3. The assistant will be automatically available via the API
+
+## Architecture
+
+- **app/assistant.py**: Core assistant class that manages prompts and responses
+- **app/tools.py**: Tool implementations for webscraping and other functions
+- **app/chat.py**: Chat interface and API endpoints
+- **app/demo.py**: Demo endpoints and examples
+- **prompts/**: Markdown templates for different assistants
+
+## Differences from fastapi-assistant
+
+- Uses vic-20's `Prompt` class instead of OpenAI Assistants API
+- Simplified thread management using previous response tracking
+- Markdown-based prompt templates instead of OpenAI assistant configurations
+- Local file storage instead of OpenAI file attachments
+- No Twilio integration
+- Support for both OpenAI and Gemini models
+
+## License
+
+MIT
