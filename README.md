@@ -1,26 +1,26 @@
-# FastAPI Prompt Assistant
+# FastAPI Responses
 
-A FastAPI-based assistant that uses the `Prompt` class from vic-20 for AI interactions instead of the OpenAI Assistants API.
+A FastAPI-based application that uses the `Prompt` class for AI interactions instead of the OpenAI Assistants API.
 
 ## Overview
 
-This project is a reimplementation of the fastapi-assistant repository, replacing the OpenAI Assistants API with a more flexible prompt-based system from vic-20. It maintains the core functionality of the original project while introducing more flexibility through markdown-based prompt templates.
+This project is a reimplementation of the fastapi-assistant repository, replacing the OpenAI Assistants API with a more flexible prompt-based system. It maintains the core functionality of the original project while introducing more flexibility through markdown-based prompt templates.
 
 ## Features
 
-- **Prompt-based AI interactions**: Uses the `Prompt` class from vic-20 for flexible AI interactions
+- **Prompt-based AI interactions**: Uses the `Prompt` class for flexible AI interactions
 - **Multiple model support**: Works with both OpenAI and Gemini models
 - **Tool integration**: Supports webscrape and other tools
 - **File handling**: Upload and process files for analysis
 - **Conversation continuity**: Maintains conversation context using previous response tracking
-- **Prompt templates**: Define assistant behavior using markdown templates
+- **Prompt templates**: Define prompt behavior using markdown templates
 
 ## Installation
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/fastapi-prompt-assistant.git
-cd fastapi-prompt-assistant
+git clone https://github.com/yourusername/fastapi-responses.git
+cd fastapi-responses
 ```
 
 2. Install dependencies:
@@ -33,6 +33,8 @@ Create a `.env` file with the following variables:
 ```
 OPENAI_API_KEY=your_openai_api_key
 # Optional: GEMINI_API_KEY=your_gemini_api_key
+PROMPTS_DIR=prompts  # Directory for prompt templates
+DEBUG=TRUE  # For development
 ```
 
 ## Usage
@@ -46,25 +48,25 @@ uvicorn application:application --reload
 Open your browser and navigate to `http://localhost:8000/chat/`
 
 3. Use the API endpoints:
-- `/demo/list_assistants`: List available assistants
-- `/demo/joke`: Get a joke from the joker assistant
-- `/demo/assistant/{assistant_name}`: Run a specific assistant with a prompt
-- `/demo/upload_file`: Upload a file for use with assistants
+- `/demo/list_prompts`: List available prompts
+- `/demo/joke`: Get a joke from the joker prompt
+- `/demo/prompt/{prompt_name}`: Run a specific prompt with content
+- `/demo/upload_file`: Upload a file for use with prompts
 
 ## Prompt Templates
 
-Assistants are defined using markdown templates in the `prompts/` directory. Each template includes:
+Prompts are defined using markdown templates in the `prompts/` directory. Each template includes:
 
-- **Instructions**: Behavior guidelines for the assistant
+- **Instructions**: Behavior guidelines for the prompt
 - **Model**: The AI model to use (OpenAI or Gemini)
-- **Tools**: Available tools for the assistant
+- **Tools**: Available tools for the prompt
 - **Prompt**: The template for the prompt with variable placeholders
 - **Response**: Guidelines for response formatting
 
 Example template:
 ```markdown
 @@ Instructions
-You are a helpful assistant that provides accurate and concise information.
+You are a helpful system that provides accurate and concise information.
 
 @@ Model
 openai/gpt-4
@@ -79,25 +81,25 @@ webscrape
 Respond in a helpful, accurate, and concise manner.
 ```
 
-## Creating New Assistants
+## Creating New Prompts
 
-To create a new assistant:
+To create a new prompt:
 
-1. Create a new markdown file in the `prompts/` directory (e.g., `prompts/my_assistant.md`)
-2. Define the assistant behavior using the template format
-3. The assistant will be automatically available via the API
+1. Create a new markdown file in the `prompts/` directory (e.g., `prompts/my_prompt.md`)
+2. Define the prompt behavior using the template format
+3. The prompt will be automatically available via the API
 
 ## Architecture
 
-- **app/assistant.py**: Core assistant class that manages prompts and responses
+- **app/prompt.py**: Core prompt handler class that manages prompts and responses
 - **app/tools.py**: Tool implementations for webscraping and other functions
 - **app/chat.py**: Chat interface and API endpoints
 - **app/demo.py**: Demo endpoints and examples
-- **prompts/**: Markdown templates for different assistants
+- **prompts/**: Markdown templates for different prompts
 
 ## Differences from fastapi-assistant
 
-- Uses vic-20's `Prompt` class instead of OpenAI Assistants API
+- Uses the `Prompt` class instead of OpenAI Assistants API
 - Simplified thread management using previous response tracking
 - Markdown-based prompt templates instead of OpenAI assistant configurations
 - Local file storage instead of OpenAI file attachments

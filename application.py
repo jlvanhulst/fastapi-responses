@@ -13,7 +13,7 @@ from app.chat import router as chat_router
 from fastapi.responses import HTMLResponse
 from fastapi import APIRouter
 
-application = FastAPI(title="Prompt Assistant Demo", version="1.0", debug=config.DEBUG)
+application = FastAPI(title="FastAPI Responses Demo", version="1.0", debug=config.DEBUG)
 
 application.add_middleware(
     CORSMiddleware,
@@ -26,7 +26,7 @@ application.add_middleware(
 root_router = APIRouter()
 @root_router.get("/", response_class=HTMLResponse)
 async def root():
-    return "Welcome to the Prompt Assistant Demo"
+    return "Welcome to the FastAPI Responses Demo"
 
 application.include_router(root_router)
 application.include_router(chat_router)

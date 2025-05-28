@@ -1,5 +1,5 @@
 @@ Instructions
-You are a helpful assistant that provides accurate and concise information. Answer the user's questions to the best of your ability.
+You are a helpful chat system that provides accurate and concise information. Answer the user's questions to the best of your ability.
 
 @@ Model
 openai/gpt-4.1

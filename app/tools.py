@@ -1,5 +1,5 @@
 """
-This file contains tools that can be used by the assistant.
+This file contains tools that can be used by the prompt system.
 """
 import httpx
 import html2text
@@ -14,7 +14,7 @@ def markdown_to_html(md_text):
     """
     This helper function is used to convert markdown to html.
     It converts the markdown to html and returns the html.
-    Handy for AI assistant output that is markdown formatted.
+    Handy for AI prompt output that is markdown formatted.
     
     Args:
         md_text (str): The markdown text to convert to html.
