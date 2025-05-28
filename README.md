@@ -1,14 +1,14 @@
 # FastAPI Prompt Assistant
 
-A FastAPI-based assistant that uses the `Prompt` class from vic-20 for AI interactions instead of the OpenAI Assistants API.
+A FastAPI-based application that uses the `Prompt` class for AI interactions instead of the OpenAI Assistants API.
 
 ## Overview
 
-This project is a reimplementation of the fastapi-assistant repository, replacing the OpenAI Assistants API with a more flexible prompt-based system from vic-20. It maintains the core functionality of the original project while introducing more flexibility through markdown-based prompt templates.
+This project is a reimplementation of the fastapi-assistant repository, replacing the OpenAI Assistants API with a more flexible prompt-based system. It maintains the core functionality of the original project while introducing more flexibility through markdown-based prompt templates.
 
 ## Features
 
-- **Prompt-based AI interactions**: Uses the `Prompt` class from vic-20 for flexible AI interactions
+- **Prompt-based AI interactions**: Uses the `Prompt` class for flexible AI interactions
 - **Multiple model support**: Works with both OpenAI and Gemini models
 - **Tool integration**: Supports webscrape and other tools
 - **File handling**: Upload and process files for analysis

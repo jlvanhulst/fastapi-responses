@@ -42,13 +42,13 @@
 
 <body class="bg-gray-100 p-6">
     <div class="container mx-auto">
-        <h1 class="text-3xl font-bold mb-6">A quick chat demo Assistant</h1>
+        <h1 class="text-3xl font-bold mb-6">A quick chat demo with Prompts</h1>
         
-        <!-- Dropdown for selecting assistants -->
+        <!-- Dropdown for selecting prompts -->
         <div class="mb-4">
-            <label for="assistant-select" class="block mb-2 text-sm font-medium text-gray-700">Choose an Assistant:</label>
-            <select id="assistant-select" class="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
-                <option value="">Select an Assistant</option>
+            <label for="prompt-select" class="block mb-2 text-sm font-medium text-gray-700">Choose a Prompt:</label>
+            <select id="prompt-select" class="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
+                <option value="">Select a Prompt</option>
             </select>
             <button id="new-chat-button" class="px-4 py-2 bg-red-600 text-white rounded-md shadow-sm">New Chat</button>
 
@@ -78,9 +78,8 @@
         const sendButton = document.getElementById('send-button');
         const uploadButton = document.getElementById('upload-button');
         const fileInput = document.getElementById('file-input');
-        const assistantSelect = document.getElementById('assistant-select');
-        let selectedAssistantId = '';
-        let threadId = null;
+        const promptSelect = document.getElementById('prompt-select');
+        let selectedPromptId = '';
         let isRecording = false;
         let recognition;
 
@@ -108,18 +107,13 @@
             formData.append('file', file);
 
             try {
-                const response = await fetch(`/chat/upload/${threadId}`, {
+                const response = await fetch(`/chat/upload`, {
                     method: 'POST',
                     body: formData
                 });
 
                 if (response.ok) {
-                    const responseThreadId = response.headers.get('X-Thread-Id');
-                if (responseThreadId) {
-                    threadId = responseThreadId;
-                    localStorage.setItem('threadId', threadId);
-                }
-                    senddMessage('📤', `File "${file.name}" uploaded successfully.`);
+                    appendMessage('📤', `File "${file.name}" uploaded successfully.`);
                 } else {
                     appendMessage('⚠️', `Failed to upload "${file.name}".`);
                 }
@@ -143,8 +137,8 @@
             );
         }
         async function sendMessage(message) {
-            if (!selectedAssistantId) {
-                alert('Please select an Assistant first.');
+            if (!selectedPromptId) {
+                alert('Please select a Prompt first.');
                 return;
             }
             
@@ -154,7 +148,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         "content": message,
-                        "assistant_name": selectedAssistantId,
+                        "prompt_name": selectedPromptId,
                         "previous_response_id": localStorage.getItem('previous_response_id')
                     })
                 });
@@ -167,7 +161,7 @@
                 
                 // Handle non-streaming response
                 const responseData = await response.json();
-                const messageContent = responseData.response;
+                const messageContent = responseData.text.value;
                 
                 // Display the response
                 appendMessage('🤖', marked.parse(messageContent));
@@ -189,32 +183,32 @@
             return newMessage;
         }
 
-        // Fetch Assistants and populate the dropdown
-        async function fetchAssistants() {
+        // Fetch Prompts and populate the dropdown
+        async function fetchPrompts() {
             try {
-                const response = await axios.get('/chat/get_assistants');
-                const assistants = response.data.data;
-                populateAssistantDropdown(assistants);
+                const response = await axios.get('/chat/get_prompts');
+                const prompts = response.data.data;
+                populatePromptDropdown(prompts);
             } catch (error) {
-                console.error('Error fetching assistants:', error);
+                console.error('Error fetching prompts:', error);
             }
         }
 
-        function populateAssistantDropdown(assistants) {
-            assistants.forEach(assistant => {
+        function populatePromptDropdown(prompts) {
+            prompts.forEach(prompt => {
                 const option = document.createElement('option');
-                option.value = assistant.assistant_id;
-                option.textContent = assistant.assistant_name;
-                assistantSelect.appendChild(option);
+                option.value = prompt.prompt_id;
+                option.textContent = prompt.prompt_name;
+                promptSelect.appendChild(option);
             });
         }
 
-        assistantSelect.addEventListener('change', function () {
-            selectedAssistantId = this.value;
+        promptSelect.addEventListener('change', function () {
+            selectedPromptId = this.value;
         });
 
-        // Call fetchAssistants on page load to populate the dropdown
-        fetchAssistants();
+        // Call fetchPrompts on page load to populate the dropdown
+        fetchPrompts();
 
         // Get reference to the new chat button
         const newChatButton = document.getElementById('new-chat-button');
@@ -227,7 +221,7 @@
             localStorage.removeItem('previous_response_id');
             
             // Add welcome message
-            appendMessage('💬', `Starting a new conversation with the ${selectedAssistantId} assistant.`);
+            appendMessage('💬', `Starting a new conversation with the ${selectedPromptId} prompt.`);
         });
     </script>
 </body>
