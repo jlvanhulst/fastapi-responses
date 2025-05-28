@@ -236,7 +236,7 @@ async def webscrape(info: WebScrapeParameters):
 
     Args:
         plain_json (dict): The JSON data containing the URL to scrape. It is meant to be called as a
-            tool call from an assistant. The json should be in the format of
+            tool call from a prompt. The json should be in the format of
             {"url": "https://www.example.com", "ignore_links": False, "max_length": 1000}
 
     Returns:
