@@ -28,13 +28,21 @@ cd fastapi-responses
 pip install -r requirements.txt
 ```
 
+or even better in a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+And EASIEST: in Visual Studio Code: Open cmd-shift-p Create Virtual Environment select venv and then requirements.txt
+
+
 3. Set up environment variables:
 Create a `.env` file with the following variables:
 ```
 OPENAI_API_KEY=your_openai_api_key
 # Optional: GEMINI_API_KEY=your_gemini_api_key
-PROMPTS_DIR=prompts  # Directory for prompt templates
-DEBUG=TRUE  # For development
 ```
 
 ## Usage
@@ -43,9 +51,12 @@ DEBUG=TRUE  # For development
 ```bash
 uvicorn application:application --reload
 ```
+Or easier: in VS Code run debugger FastAPI.
+(File is preconfigured)
 
 2. Access the chat interface:
-Open your browser and navigate to `http://localhost:8000/chat/`
+Open your browser and navigate to `http://localhost:8000/chat/` this is really just to the different prompts.
+(Its like a simplified playground)
 
 3. Use the API endpoints:
 - `/demo/list_prompts`: List available prompts

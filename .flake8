@@ -1,0 +1,7 @@
+[flake8]
+max-line-length = 150
+exclude = .git,__pycache__,docs/source/conf.py,old,build,dist,.venv,.tox,.mypy_cache
+ignore = E203, W503, E231
+# E203: whitespace before ':'
+# W503: line break before binary operator
+# E231: missing whitespace after ','
