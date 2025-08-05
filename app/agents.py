@@ -2,6 +2,7 @@
 Simple implementation of Agent and Runner classes to support PromptAgent.
 """
 
+
 class Agent:
     """
     Base Agent class that PromptAgent inherits from.
@@ -13,6 +14,7 @@ class Agent:
         self.handoffs = handoffs or []
         self.output_type = output_type
 
+
 class Runner:
     """
     Simple Runner class to execute prompts.
@@ -21,11 +23,11 @@ class Runner:
     async def run(agent, prompt):
         """
         Run a prompt through an agent.
-        
+
         Args:
             agent: The agent to run the prompt through.
             prompt: The prompt to run.
-            
+
         Returns:
             The result of running the prompt.
         """

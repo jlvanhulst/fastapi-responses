@@ -1,7 +1,7 @@
 """
     The entry file for the FastAPI application.
     No need to change anything here use router.py to add new points and functionality
-    
+
     DEBUG setting / OPENAI_API_KEY are read from .env file.
     (see config.py)
 """
@@ -24,6 +24,8 @@ application.add_middleware(
 )
 
 root_router = APIRouter()
+
+
 @root_router.get("/", response_class=HTMLResponse)
 async def root():
     return "Welcome to the FastAPI Responses Demo"

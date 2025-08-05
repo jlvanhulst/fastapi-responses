@@ -6,15 +6,15 @@ import os
 import logging
 from dotenv import load_dotenv
 
+
 class Config():
     """
     Main configuration class. Contains all the configurations for the project.
     """
-    
+
     DEBUG: bool = (os.getenv("DEBUG", "FALSE") == "TRUE")
     logger = logging.getLogger(__name__)
     logging.basicConfig(level=logging.DEBUG, filename='app.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
-
 
     logger.info(f"DEBUG: {DEBUG}")
     env = ".env.development" if DEBUG else ".env.production"
@@ -26,13 +26,14 @@ class Config():
         logger.warning('No environment settings file used/found')
     else:
         logger.info(f"Environment settings file used: {env} ")
-    
+
     OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
     GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY")
     GOOGLE_SEARCH_CX_ID: str = os.getenv("GOOGLE_SEARCH_CX_ID")
     GOOGLE_SEEARCH_DEVELOPER_KEY: str = os.getenv("GOOGLE_SEEARCH_DEVELOPER_KEY")
-    
+
     PROMPTS_DIR: str = os.getenv("PROMPTS_DIR", "prompts")
+
 
 config = Config()
 
