@@ -187,14 +187,19 @@ class PromptHandler(metaclass=Singleton):
                 variables["file_contents"] = "\n\n".join(file_contents)
         
         try:
-            result = await prompt.run(variables=variables)
+            result = await prompt.run(variables=variables, previous_response_id=previous_response_id)
             
-            import uuid
-            response_id = str(uuid.uuid4())
+            # Use the actual OpenAI response ID instead of generating our own UUID
+            response_id = prompt.id
             self.responses[response_id] = result
             
             logger.info(f"Generated response: {result}")
-            return {"response": result, "status_code": 200, "response_id": response_id}
+            return {
+                "response": result, 
+                "status_code": 200, 
+                "response_id": response_id,
+                "files": prompt.output_files
+            }
         except Exception as e:
             logger.error(f"Error generating response: {e}")
             return {"response": f"Error generating response: {str(e)}", "status_code": 500}

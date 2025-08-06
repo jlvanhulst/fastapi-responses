@@ -391,6 +391,7 @@ class Prompt:
                 max_output_tokens=16000 if self.model != "gpt-4.1" else 32000,
             )
         self.raw_response = response
+        self.id = response.id  # Update to the final response ID after function calls
         self.text_response_object = None
         self.output_files = []
         # collect the files from the code interpreter calls and the text response object if it exists
@@ -400,11 +401,15 @@ class Prompt:
                 for item in content:
                     if item.type == "output_text":
                         self.text_response_object = item
-            elif output.type == "code_interpreter_call":
-                files = await client.containers.files.list(container_id=output.container_id)
-                # get files
-                for file in files.data:
-                    self.output_files.append({"file_id": file.id, "container_id": output.container_id})
+                        if len(item.annotations) > 0:
+                            for annotation in item.annotations:
+                                if annotation.type == "container_file_citation":
+                                    self.output_files.append({
+                                        "file_id": annotation.file_id,
+                                        "container_id": annotation.container_id,
+                                        "filename": annotation.filename,
+                                    })
+
         return response.output_text
 
     async def gemini(self) -> str:

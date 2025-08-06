@@ -15,10 +15,33 @@
             margin: 0;
         }
 
-        .container {
+        .main-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 300px;
+            min-width: 300px;
+            background-color: #f8f9fa;
+            border-right: 1px solid #e5e7eb;
+            overflow-y: auto;
+        }
+
+        .content-area {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            height: 100%;
+            overflow: hidden;
+        }
+
+        .instructions-area {
+            background-color: #f3f4f6;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1rem;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
         }
 
         /* Make chat-box grow to fill available vertical space */
@@ -40,33 +63,64 @@
     </style>
 </head>
 
-<body class="bg-gray-100 p-6">
-    <div class="container mx-auto">
-        <h1 class="text-3xl font-bold mb-6">A quick chat demo with Prompts</h1>
-        
-        <!-- Dropdown for selecting prompts -->
-        <div class="mb-4">
-            <label for="prompt-select" class="block mb-2 text-sm font-medium text-gray-700">Choose a Prompt:</label>
-            <select id="prompt-select" class="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
-                <option value="">Select a Prompt</option>
-            </select>
-            <button id="new-chat-button" class="px-4 py-2 bg-red-600 text-white rounded-md shadow-sm">New Chat</button>
-
-        </div>
-
-        <div id="chat-window">
-            <div id="chat-box" class="border border-gray-300 p-4 rounded-md mb-4 h-96 overflow-y-auto bg-white"></div>
-            <div class="flex items-center">
-                <textarea type="text" id="message-input"
-                    class="flex-grow border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm mr-2 p-2"
-                    placeholder="Type your message"></textarea>
-                <button id="send-button"
-                    class="ml-2 px-4 py-2 bg-green-600 text-white rounded-md shadow-sm">Send</button>
+<body class="bg-gray-100">
+    <div class="main-container">
+        <!-- Left Sidebar -->
+        <div class="sidebar p-4">
+            <h2 class="text-xl font-bold mb-4">Prompt Settings</h2>
+            
+            <!-- Prompt Selection -->
+            <div class="mb-4">
+                <label for="prompt-select" class="block mb-2 text-sm font-medium text-gray-700">Choose a Prompt:</label>
+                <select id="prompt-select" class="w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm p-2">
+                    <option value="">Select a Prompt</option>
+                </select>
             </div>
+
+            <!-- Model Info -->
+            <div id="model-info" class="mb-4" style="display: none;">
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">Model:</h3>
+                <div id="model-name" class="text-sm text-gray-600 bg-white p-2 rounded border"></div>
+            </div>
+
+            <!-- Tools Info -->
+            <div id="tools-info" class="mb-4" style="display: none;">
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">Tools:</h3>
+                <div id="tools-list" class="text-sm text-gray-600 bg-white p-2 rounded border max-h-32 overflow-y-auto"></div>
+            </div>
+
             <!-- File upload section -->
             <div class="mt-4">
-                <input type="file" id="file-input" class="border-gray-300 p-2" />
-                <button id="upload-button" class="ml-2 px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm">Upload</button>
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">Upload File:</h3>
+                <input type="file" id="file-input" class="w-full border-gray-300 p-2 text-xs" />
+                <button id="upload-button" class="w-full mt-2 px-4 py-2 bg-blue-600 text-white rounded-md shadow-sm text-sm">Upload</button>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="content-area">
+            <!-- Header -->
+            <div class="p-4 bg-white border-b">
+                <h1 class="text-2xl font-bold">FastAPI Chat Demo</h1>
+                <button id="new-chat-button" class="mt-2 px-4 py-2 bg-red-600 text-white rounded-md shadow-sm text-sm">New Chat</button>
+            </div>
+
+            <!-- Instructions Area -->
+            <div id="instructions-area" class="instructions-area">
+                <h3 class="text-sm font-semibold text-gray-700 mb-2">Instructions:</h3>
+                <div id="instructions-content" class="text-sm text-gray-600"></div>
+            </div>
+
+            <!-- Chat Window -->
+            <div id="chat-window" class="p-4">
+                <div id="chat-box" class="border border-gray-300 p-4 rounded-md mb-4 h-96 overflow-y-auto bg-white"></div>
+                <div class="flex items-center">
+                    <textarea type="text" id="message-input"
+                        class="flex-grow border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm mr-2 p-2"
+                        placeholder="Type your message"></textarea>
+                    <button id="send-button"
+                        class="ml-2 px-4 py-2 bg-green-600 text-white rounded-md shadow-sm">Send</button>
+                </div>
             </div>
         </div>
     </div>
@@ -86,6 +140,10 @@
         sendButton.addEventListener('click', async () => {
             const message = messageInput.value.trim();
             if (message) {
+                if (!selectedPromptId) {
+                    alert('Please select a Prompt first.');
+                    return;
+                }
                 appendMessage('🗣️', message);
                 messageInput.value = '';
                 await sendMessage(message);
@@ -137,11 +195,6 @@
             );
         }
         async function sendMessage(message) {
-            if (!selectedPromptId) {
-                alert('Please select a Prompt first.');
-                return;
-            }
-            
             try {
                 const response = await fetch(`/chat/thread/`, {
                     method: 'POST',
@@ -162,9 +215,10 @@
                 // Handle non-streaming response
                 const responseData = await response.json();
                 const messageContent = responseData.text.value;
+                const files = responseData.files || [];
                 
                 // Display the response
-                appendMessage('🤖', marked.parse(messageContent));
+                appendMessage('🤖', marked.parse(messageContent), files);
                 
                 // Scroll to bottom
                 chatBox.scrollTop = chatBox.scrollHeight;
@@ -173,10 +227,34 @@
             }
         }
 
-        function appendMessage(sender, message) {
+        function appendMessage(sender, message, files = []) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('mb-2');
-            messageElement.innerHTML = `<strong>${sender}:</strong>\n<span class="msg">${message}</span>`;
+            
+            let filesHtml = '';
+            if (files && files.length > 0) {
+                filesHtml = '<div class="mt-2">';
+                files.forEach(file => {
+                    const fileUrl = `/chat/files/${file.container_id}/${file.file_id}`;
+                    const fileName = file.filename || file.name || file.file_id;
+                    
+                    // Check if it's likely an image based on filename, content_type, or common patterns
+                    const isImage = fileName.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i) || 
+                                   (file.content_type && file.content_type.startsWith('image/')) ||
+                                   file.file_id.includes('image') || 
+                                   file.file_id.includes('plot') ||
+                                   file.file_id.includes('chart');
+                    
+                    if (isImage) {
+                        filesHtml += `<div class="my-2"><img src="${fileUrl}" alt="Generated image" class="max-w-full h-auto border rounded" /></div>`;
+                    } else {
+                        filesHtml += `<div class="my-1"><a href="${fileUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline">📎 ${fileName}</a></div>`;
+                    }
+                });
+                filesHtml += '</div>';
+            }
+            
+            messageElement.innerHTML = `<strong>${sender}:</strong>\n<span class="msg">${message}</span>${filesHtml}`;
             chatBox.appendChild(messageElement);
             chatBox.scrollTop = chatBox.scrollHeight;
             const newMessage = chatBox.children[chatBox.children.length - 1];
@@ -205,7 +283,57 @@
 
         promptSelect.addEventListener('change', function () {
             selectedPromptId = this.value;
+            if (selectedPromptId) {
+                loadPromptDetails(selectedPromptId);
+                clearChat(); // Clear chat when switching prompts
+            } else {
+                hidePromptDetails();
+                clearChat(); // Clear chat when no prompt selected
+            }
         });
+
+        async function loadPromptDetails(promptName) {
+            try {
+                const response = await axios.get(`/chat/prompt_details/${promptName}`);
+                if (response.data.status === 'success') {
+                    const data = response.data.data;
+                    displayPromptDetails(data);
+                }
+            } catch (error) {
+                console.error('Error loading prompt details:', error);
+            }
+        }
+
+        function displayPromptDetails(data) {
+            // Show instructions
+            const instructionsArea = document.getElementById('instructions-area');
+            const instructionsContent = document.getElementById('instructions-content');
+            instructionsContent.innerHTML = marked.parse(data.instructions || '');
+            instructionsArea.style.display = 'block';
+
+            // Show model
+            const modelInfo = document.getElementById('model-info');
+            const modelName = document.getElementById('model-name');
+            modelName.textContent = data.model || 'Not specified';
+            modelInfo.style.display = 'block';
+
+            // Show tools
+            const toolsInfo = document.getElementById('tools-info');
+            const toolsList = document.getElementById('tools-list');
+            if (data.tools && data.tools.length > 0) {
+                toolsList.innerHTML = data.tools.map(tool => `<div class="mb-1 px-2 py-1 bg-blue-100 rounded text-xs">${tool}</div>`).join('');
+                toolsInfo.style.display = 'block';
+            } else {
+                toolsList.innerHTML = '<div class="text-gray-400">No tools configured</div>';
+                toolsInfo.style.display = 'block';
+            }
+        }
+
+        function hidePromptDetails() {
+            document.getElementById('instructions-area').style.display = 'none';
+            document.getElementById('model-info').style.display = 'none';
+            document.getElementById('tools-info').style.display = 'none';
+        }
 
         // Call fetchPrompts on page load to populate the dropdown
         fetchPrompts();
@@ -213,15 +341,21 @@
         // Get reference to the new chat button
         const newChatButton = document.getElementById('new-chat-button');
 
-        newChatButton.addEventListener('click', () => {
+        function clearChat() {
             // Clear the chat history
             chatBox.innerHTML = '';
             
             // Clear conversation history
             localStorage.removeItem('previous_response_id');
             
-            // Add welcome message
-            appendMessage('💬', `Starting a new conversation with the ${selectedPromptId} prompt.`);
+            // Add welcome message if a prompt is selected
+            if (selectedPromptId) {
+                appendMessage('💬', `Starting a new conversation with the ${selectedPromptId} prompt.`);
+            }
+        }
+
+        newChatButton.addEventListener('click', () => {
+            clearChat();
         });
     </script>
 </body>
