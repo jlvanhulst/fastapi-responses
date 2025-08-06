@@ -37,6 +37,6 @@ class Config():
 
 config = Config()
 
-if config.OPENAI_API_KEY is None and config.GEMINI_API_KEY is None:
+if config.OPENAI_API_KEY is None:
     # the app needs at least one API key - so no point in continuing
-    raise ValueError("Neither OPENAI_API_KEY nor GEMINI_API_KEY is set - cannot run without at least one! Set it either in your OS or in .env or config.py")
+    raise ValueError("PENAI_API_KEY - cannot run without. Set it either in your OS or in .env or config.py")

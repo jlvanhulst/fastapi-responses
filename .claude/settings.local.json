@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -m uvicorn:*)"
+      "Bash(python -m uvicorn:*)",
+      "Bash(mv:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }

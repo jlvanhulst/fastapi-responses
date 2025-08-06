@@ -8,13 +8,13 @@ This project demonstrates how to build a clean, structured AI application using 
 
 ## Key Features
 
-- **📝 Prompt Definition Files**: Define AI behavior using markdown templates with instructions, tools, and models
-- **🔄 Thread Persistence**: Automatic conversation continuity using response IDs
-- **🛠️ Tool Integration**: Built-in support for web scraping, code interpreter, and custom functions
-- **📁 File Handling**: Upload, process, and display files (images, documents, data)
-- **🎯 Smart Response Wrapper**: Handles OpenAI API complexities behind a simple interface
+- ** Prompt Definition Files**: Define AI behavior using markdown templates with instructions, tools, and models
+- ** Thread Persistence**: Automatic conversation continuity using response IDs
+- ** Tool Integration**: Built-in support for web scraping, code interpreter, and custom functions
+- ** File Handling**: Upload, process, and display files (images, documents, data)
+- ** Smart Response Wrapper**: Handles OpenAI API complexities behind a simple interface
 
-- **💬 Interactive Chat TEST / DEMO Interface**: Web-based chat UI with sidebar showing prompt file details
+- ** Interactive Chat TEST / DEMO Interface**: Web-based chat UI with sidebar showing prompt file details
 
 
 ## Quick Start
@@ -100,6 +100,7 @@ Help the user with their coding question: {{content}}
 - `POST /demo/prompt/{name}` - Execute a specific prompt with JSON payload
 - `POST /demo/prompt_with_files/{name}` - Execute a prompt with embedded files (recommended)
 - `POST /demo/upload_file` - Upload a single file and get file_id
+- `GET /demo/graph_report?prompt=...` - Generate PDF report with embedded charts using graph_demo prompt
 
 ### File Management
 - `POST /chat/upload` - Upload files for use in conversations
@@ -112,7 +113,8 @@ Help the user with their coding question: {{content}}
 │   ├── ai_processor.py    # Core Prompt class and OpenAI integration
 │   ├── ai_tools.py        # Tool registration and schema handling
 │   ├── chat.py           # Chat interface and handlers
-│   ├── demo.py           # Demo endpoints
+│   ├── demo_routes.py    # Demo API endpoints
+│   ├── pdf_utils.py      # PDF generation utilities
 │   └── tools.py          # Custom tool implementations
 ├── prompts/              # Prompt definition files
 ├── templates/            # HTML templates for web interface
@@ -186,25 +188,98 @@ asyncio.create_task(process_ai_request(job_id, prompt_data))
 
 ## Development
 
-### Adding Custom Tools
+### Adding Custom Functions for Tool Calls
 
-1. Create your function in `app/tools.py`:
+This project supports custom function calling that can be used with OpenAI's function calling capabilities. Here's how to add your own functions:
+
+#### 1. Create a Function with Pydantic Schema
+
+Create your function in `app/tools.py` with proper type hints and Pydantic models:
+
 ```python
-async def my_custom_tool(params: dict):
-    # Your tool implementation
+from pydantic import BaseModel, Field
+
+class MyToolRequest(BaseModel):
+    """Request model for my custom tool."""
+    param1: str = Field(..., description="Description of parameter 1")
+    param2: int = Field(..., description="Numeric parameter with constraints", ge=0, le=100)
+    optional_param: str = Field(None, description="Optional parameter")
+
+async def my_custom_tool(request: MyToolRequest) -> str:
+    """
+    Description of what this tool does.
+
+    This docstring becomes the function description for OpenAI.
+    Be clear and specific about the function's purpose.
+    """
+    # Your implementation here
+    result = f"Processed {request.param1} with value {request.param2}"
+
+    if request.optional_param:
+        result += f" and {request.optional_param}"
+
     return result
 ```
 
-2. Register it in the PromptHandler:
+#### 2. Register the Function
+
+Add the registration in `application.py` at startup:
+
 ```python
+# Register tools at application startup
+from app.ai_tools import register_tools
+from app.tools import my_custom_tool
 register_tools("my_custom_tool", function=my_custom_tool)
 ```
 
-3. Use it in prompts:
+#### 3. Use in Prompt Templates
+
+Add your function to the `@@ Tools` section in your prompt files:
+
 ```markdown
+@@ Model
+openai/gpt-4o
+
+@@ Instructions
+You can help users with custom processing tasks.
+
 @@ Tools
 my_custom_tool
+generate_client_revenue_data
+
+@@ Prompt
+{{content}}
 ```
+
+#### 4. Example: Revenue Data Generator
+
+See the existing `generate_client_revenue_data` function as a complete example:
+
+```python
+class RevenueDataRequest(BaseModel):
+    client_name: str = Field(..., description="The name of the client")
+    year: int = Field(..., description="The year for revenue data", ge=2020, le=2030)
+
+async def generate_client_revenue_data(request: RevenueDataRequest) -> RevenueDataResponse:
+    """Generate mock client revenue data for demonstration purposes."""
+    # Implementation generates 12 months of data with realistic variations
+    return RevenueDataResponse(...)
+```
+
+#### Key Points:
+
+- **Pydantic Models**: Always use Pydantic models for request parameters - this generates OpenAI function schemas automatically
+- **Type Safety**: Proper typing ensures reliable function calling
+- **Documentation**: Docstrings become function descriptions for AI
+- **Async Support**: Functions can be async for database/API calls
+- **Error Handling**: Include proper error handling in your functions
+- **Field Validation**: Use Pydantic Field constraints for parameter validation
+
+#### Testing Your Functions:
+
+1. **Direct Testing**: Test functions directly in your code
+2. **API Testing**: Use `/demo/prompt/{prompt_name}` endpoints with prompts that use your tools
+3. **Chat Interface**: Test through the web chat interface at `/chat/`
 
 ### Creating New Prompts
 

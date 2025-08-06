@@ -275,39 +275,39 @@ class PDFGenerator:
         html_content = markdown.markdown(markdown_text, extensions=['tables', 'fenced_code'])
         logger.info(f"Original HTML content (first 1000 chars): {html_content[:1000]}")
 
-        # Find ANY image references in HTML 
+        # Find ANY image references in HTML
         # Pattern: <img ... src="anything" ... />
         img_pattern = r'<img[^>]*src=["\']([^"\']+)["\'][^>]*>'
 
         def replace_image(match):
             # Extract the full src value
             src_value = match.group(1)  # e.g., "sandbox:/mnt/data/acme_corp_2024_revenue.png"
-            
+
             # Extract just the filename from any path
             filename = os.path.basename(src_value)  # e.g., "acme_corp_2024_revenue.png"
-            
-            logger.info(f"=== FILE MATCHING ===")
+
+            logger.info("=== FILE MATCHING ===")
             logger.info(f"Found image src: '{src_value}'")
             logger.info(f"Extracted filename: '{filename}'")
-            
+
             # Find EXACT match in output_files
             matching_file = None
             if output_files:
                 for i, output_file in enumerate(output_files):
                     file_name = output_file.get('filename', '')
                     logger.info(f"  Comparing: '{filename}' == '{file_name}'")
-                    
+
                     # SIMPLE EXACT MATCH
                     if file_name == filename:
-                        logger.info(f"✓ EXACT MATCH FOUND!")
+                        logger.info("✓ EXACT MATCH FOUND!")
                         matching_file = output_file
                         break
-            
+
             if matching_file:
                 # Extract alt text from the original img tag if available
                 alt_match = re.search(r'alt=["\']([^"\']*)["\']', match.group(0))
                 alt_text = alt_match.group(1) if alt_match else filename
-                
+
                 file_references.append({
                     'type': 'image',
                     'file_info': matching_file,
@@ -535,7 +535,7 @@ class PDFGenerator:
         """
         try:
             # Log the input for debugging
-            logger.info(f"=== PDF Generation Debug ===")
+            logger.info("=== PDF Generation Debug ===")
             logger.info(f"Markdown content (first 500 chars): {markdown_content[:500]}")
             logger.info(f"Number of output files: {len(output_files) if output_files else 0}")
             if output_files:
