@@ -1,122 +1,185 @@
-# FastAPI Responses
+# FastAPI Responses API Demo
 
-A FastAPI-based application that uses the `Prompt` class for AI interactions instead of the OpenAI Assistants API.
+A FastAPI implementation showcasing the OpenAI Responses API with a smart wrapper class that enables prompt definition files for structured AI interactions.
 
 ## Overview
 
-This project is a reimplementation of the fastapi-assistant repository, replacing the OpenAI Assistants API with a more flexible prompt-based system. It maintains the core functionality of the original project while introducing more flexibility through markdown-based prompt templates.
+This project demonstrates how to build a clean, structured AI application using the OpenAI Responses API. It features a powerful prompt system that allows you to define AI behavior, tools, and conversation flow through simple markdown files.
 
-## Features
+## Key Features
 
-- **Prompt-based AI interactions**: Uses the `Prompt` class for flexible AI interactions
-- **Multiple model support**: Works with both OpenAI and Gemini models
-- **Tool integration**: Supports webscrape and other tools
-- **File handling**: Upload and process files for analysis
-- **Conversation continuity**: Maintains conversation context using previous response tracking
-- **Prompt templates**: Define prompt behavior using markdown templates
+- **📝 Prompt Definition Files**: Define AI behavior using markdown templates with instructions, tools, and models
+- **🔄 Thread Persistence**: Automatic conversation continuity using response IDs
+- **🛠️ Tool Integration**: Built-in support for web scraping, code interpreter, and custom functions
+- **📁 File Handling**: Upload, process, and display files (images, documents, data)
+- **🎯 Smart Response Wrapper**: Handles OpenAI API complexities behind a simple interface
 
-## Installation
+- **💬 Interactive Chat TEST / DEMO Interface**: Web-based chat UI with sidebar showing prompt file details
 
-1. Clone the repository:
+
+## Quick Start
+
+### 1. Installation
+
 ```bash
-git clone https://github.com/yourusername/fastapi-responses.git
+git clone https://github.com/jlvanhulst/fastapi-responses.git
 cd fastapi-responses
-```
-
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-or even better in a virtual environment:
-```bash
 python -m venv venv
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-And EASIEST: in Visual Studio Code: Open cmd-shift-p Create Virtual Environment select venv and then requirements.txt
+### 2. Environment Setup
 
-
-3. Set up environment variables:
-Create a `.env` file with the following variables:
-```
-OPENAI_API_KEY=your_openai_api_key
-# Optional: GEMINI_API_KEY=your_gemini_api_key
+Create a `.env` file:
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+DEBUG=True
 ```
 
-## Usage
+### 3. Run the Application
 
-1. Start the server:
+**Option 1: Command Line**
 ```bash
 uvicorn application:application --reload
 ```
-Or easier: in VS Code run debugger FastAPI.
-(File is preconfigured)
 
-2. Access the chat interface:
-Open your browser and navigate to `http://localhost:8000/chat/` this is really just to the different prompts.
-(Its like a simplified playground)
+**Option 2: VS Code/Cursor (Recommended)**
+The project includes a preconfigured `launch.json` file. Simply:
+1. Open the project in VS Code or Cursor
+2. Press `F5` or go to Run → Start Debugging
+3. The FastAPI server will start automatically with debugging enabled
 
-3. Use the API endpoints:
-- `/demo/list_prompts`: List available prompts
-- `/demo/joke`: Get a joke from the joker prompt
-- `/demo/prompt/{prompt_name}`: Run a specific prompt with content
-- `/demo/upload_file`: Upload a file for use with prompts
+Visit `http://localhost:8000/chat/` to start chatting!
 
-## Prompt Templates
+## Prompt System
 
-Prompts are defined using markdown templates in the `prompts/` directory. Each template includes:
+### Creating Prompts
 
-- **Instructions**: Behavior guidelines for the prompt
-- **Model**: The AI model to use (OpenAI or Gemini)
-- **Tools**: Available tools for the prompt
-- **Prompt**: The template for the prompt with variable placeholders
-- **Response**: Guidelines for response formatting
+Prompts are defined in markdown files in the `prompts/` directory. Each prompt file contains sections that define the AI's behavior:
 
-Example template:
 ```markdown
 @@ Instructions
-You are a helpful system that provides accurate and concise information.
+You are a helpful coding assistant that provides clear, well-documented code examples.
 
 @@ Model
-openai/gpt-4
+openai/gpt-4.1
 
 @@ Tools
+code_interpreter
 webscrape
 
 @@ Prompt
-{{content}}
-
-@@ Response
-Respond in a helpful, accurate, and concise manner.
+Help the user with their coding question: {{content}}
 ```
 
-## Creating New Prompts
+### Available Sections
 
-To create a new prompt:
+- **`@@ Instructions`**: System prompt defining the AI's role and behavior
+- **`@@ Model`**: Which model to use (e.g., `openai/gpt-4.1`)
+- **`@@ Tools`**: Available tools (`code_interpreter`, `web_search`, `webscrape`, custom functions)
+- **`@@ Prompt`**: The template with `{{content}}` placeholders for user input
 
-1. Create a new markdown file in the `prompts/` directory (e.g., `prompts/my_prompt.md`)
-2. Define the prompt behavior using the template format
-3. The prompt will be automatically available via the API
+### Built-in Tools
+
+- **`code_interpreter`**: Execute Python code, create plots, analyze data
+- **`web_search`**: Search the web for current information
+- **`webscrape`**: Scrape content from websites
+- **Custom Tools**: Add your own functions in `app/tools.py`
+
+## API Endpoints
+
+### Chat Interface
+- `GET /chat/` - Interactive chat web interface
+- `POST /chat/thread/` - Send message and get AI response
+- `GET /chat/get_prompts` - List available prompts
+- `GET /chat/prompt_details/{name}` - Get prompt configuration
+
+### Demo Endpoints
+- `GET /demo/list_prompts` - List all available prompts
+- `POST /demo/prompt/{name}` - Execute a specific prompt
+- `POST /demo/upload_file` - Upload files for processing
+
+### File Management
+- `POST /chat/upload` - Upload files for use in conversations
+- `GET /chat/files/{container_id}/{file_id}` - Serve generated files
 
 ## Architecture
 
-- **app/prompt.py**: Core prompt handler class that manages prompts and responses
-- **app/tools.py**: Tool implementations for webscraping and other functions
-- **app/chat.py**: Chat interface and API endpoints
-- **app/demo.py**: Demo endpoints and examples
-- **prompts/**: Markdown templates for different prompts
+```
+├── app/
+│   ├── ai_processor.py    # Core Prompt class and OpenAI integration
+│   ├── ai_tools.py        # Tool registration and schema handling
+│   ├── chat.py           # Chat interface and handlers
+│   ├── demo.py           # Demo endpoints
+│   └── tools.py          # Custom tool implementations
+├── prompts/              # Prompt definition files
+├── templates/            # HTML templates for web interface
+└── application.py        # FastAPI app configuration
+```
 
-## Differences from fastapi-assistant
+## Key Components
 
-- Uses the `Prompt` class instead of OpenAI Assistants API
-- Simplified thread management using previous response tracking
-- Markdown-based prompt templates instead of OpenAI assistant configurations
-- Local file storage instead of OpenAI file attachments
-- No Twilio integration
-- Support for both OpenAI and Gemini models
+### Prompt Class
+The core `Prompt` class handles:
+- Loading and parsing markdown prompt files
+- Managing conversation threads with response IDs
+- Tool execution and file handling
+- Model switching and configuration
+
+### PromptHandler
+A singleton that manages:
+- Prompt instances and caching
+- File uploads and storage
+- Response history for conversation continuity
+
+### Chat Interface
+Features include:
+- Real-time prompt selection and configuration display
+- File upload and inline image viewing
+- Conversation history with thread persistence
+- Clean, responsive UI with sidebar navigation
+
+## Example Use Cases
+
+1. **Code Assistant**: Help with programming questions using code interpreter
+2. **Research Assistant**: Web search and scraping for information gathering
+3. **Data Analyst**: Upload CSV files and create visualizations
+4. **Content Creator**: Generate and refine content with specific guidelines
+
+## Development
+
+### Adding Custom Tools
+
+1. Create your function in `app/tools.py`:
+```python
+async def my_custom_tool(params: dict):
+    # Your tool implementation
+    return result
+```
+
+2. Register it in the PromptHandler:
+```python
+register_tools("my_custom_tool", function=my_custom_tool)
+```
+
+3. Use it in prompts:
+```markdown
+@@ Tools
+my_custom_tool
+```
+
+### Creating New Prompts
+
+1. Create `prompts/my_prompt.md`
+2. Define the sections as shown above
+3. Restart the application
+4. Select your prompt in the chat interface
 
 ## License
 
-MIT
+MIT License - feel free to use this as a foundation for your own AI applications!
+
+## Contributing
+
+This is a demo project showcasing the OpenAI Responses API capabilities. Feel free to fork and adapt for your needs!

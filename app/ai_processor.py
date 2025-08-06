@@ -6,32 +6,12 @@ from datetime import datetime
 
 import aiofiles
 from fastapi import HTTPException
-from app.agents import Agent, Runner
-from google import genai
-from google.genai import types
 from openai import AsyncOpenAI
 
 from app.ai_tools import FunctionRequest, JsonResponse, frommarkdown, handle_openai_function
 
 PROMPTS_DIR = os.getenv("PROMPTS_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "prompts"))
 AI_MODEL = os.getenv("AI_MODEL", "openai/gpt-4.1")
-
-
-def _clean_schema(schema: dict, parent_key: str = None) -> dict:
-    """Recursively remove all instances of 'additionalProperties' from a JSON schema."""
-    if isinstance(schema, dict):
-        # schema.pop("additionalProperties", None)
-        if not parent_key:
-            schema.pop("title", None)
-            schema.pop("default", None)
-        for key, value in schema.items():
-            if isinstance(value, dict):
-                _clean_schema(value, key)
-            elif isinstance(value, list):
-                for item in value:
-                    if isinstance(item, dict):
-                        _clean_schema(item, parent_key)
-    return schema
 
 
 class SafeDict(dict):
@@ -143,7 +123,9 @@ class Prompt:
                 if tool == "code_interpreter":
                     tool_schemas.append({"type": "code_interpreter"})
                 elif tool in ("web_search_preview", "web_search"):
-                    tool_schemas.append({"type": "web_search"})
+                    tool_schemas.append({"type": "web_search_preview"})
+                elif tool == "image_generation":
+                    tool_schemas.append({"type": "image_generation"})
                 else:
                     tool_schemas.append(
                         await handle_openai_function(
@@ -252,12 +234,10 @@ class Prompt:
         if variables is not None:
             self.variables = variables
             self._apply_variables()
-        if self.provider == "gemini":
-            self.response = await self.gemini()
-        elif self.provider == "openai":
+        if self.provider == "openai":
             self.response = await self.openai(previous_response_id=previous_response_id)
         else:
-            raise ValueError(f"Invalid provider/provider not set: {self.provider}")
+            raise ValueError(f"Invalid provider/provider not set: {self.provider}. Only OpenAI is supported.")
         return self.response
 
     @classmethod
@@ -411,143 +391,3 @@ class Prompt:
                                     })
 
         return response.output_text
-
-    async def gemini(self) -> str:
-        """
-        Asynchronously generates a response from the Gemini model using the given prompt.
-
-        Args:
-            prompt: The input text prompt.
-            api_key: Your Google AI Gemini API key.
-            model_name:  The name of the Gemini model to use (e.g., "gemini-pro",
-                        "gemini-pro-vision").
-                        Defaults to "gemini-pro".
-            generation_config: Optional. A dictionary of generation configuration settings.
-                            See the Google AI documentation for valid options.  Examples:
-                            {
-                                'temperature': 0.7,
-                                'top_p': 0.9,
-                                'top_k': 40,
-                                'max_output_tokens': 2048
-                            }
-            safety_settings: Optional. A dictionary of safety settings.
-                          See the Google AI documentation. Examples:
-                            [
-                                {
-                                    "category": "HARM_CATEGORY_HARASSMENT",
-                                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
-                                },
-                                {
-                                    "category": "HARM_CATEGORY_HATE_SPEECH",
-                                    "threshold": "BLOCK_MEDIUM_AND_ABOVE"
-                                }
-                            ]
-
-        Returns:
-            The full text response from the Gemini model.
-            Returns an empty string on error, and prints the error.
-
-        Raises:
-            ValueError: if the API key is not provided.
-            TypeError:  if prompt is not a string.
-            Exception: For other errors during generation.
-        """
-        api_key = os.getenv("GEMINI_API_KEY")
-        if not api_key:
-            raise ValueError("API key must be provided.")
-
-        if not isinstance(self.prompt, str):
-            raise TypeError("Prompt must be a string.")
-
-        client = genai.Client(
-            api_key=api_key,
-        )
-        try:
-            schema = (
-                self.response_class.model_json_schema() if self.response_class is not None else None
-            )
-            if schema is not None:
-                schema = _clean_schema(schema)
-            tools = [t for t in self.tool_schemas if t.get("type") == "function"]
-            if tools:
-                for tool in tools:
-                    tool.pop("type", None)
-                    tool.pop("strict", None)
-                tools = _clean_schema(tools)
-            response = await client.aio.models.generate_content(
-                model=self.model,
-                contents=types.Part.from_text(text=self.prompt),
-                config=types.GenerateContentConfig(
-                    temperature=0,
-                    top_p=0.95,
-                    top_k=20,
-                    candidate_count=1,
-                    seed=5,
-                    max_output_tokens=16000,
-                    presence_penalty=0.0,
-                    frequency_penalty=0.0,
-                    system_instruction=self.instructions,
-                    response_mime_type=(
-                        "text/plain" if self.response_class is None else "application/json"
-                    ),
-                    response_schema=schema,
-                    *({"tools": [{"functionDeclarations": tools}]} if tools else {}),
-                ),
-            )
-
-            text = str(response.text)
-        except Exception as e:
-            text = str(e)
-            print(f"Error during generation: {e}")  # Log the error for debugging
-        return text  # Return empty string on failure
-
-
-class PromptAgent(Agent):
-    '''
-    Turn a prompt into an OpenAI Agent
-    '''
-    _prompt: None
-
-    @classmethod
-    async def create(
-        cls,
-        name: str,
-        variables: dict = None,
-        response_class: JsonResponse = None,
-        model: str = None,
-        provider: str = None,
-    ):
-        _prompt = await Prompt.create(
-            name=name,
-            variables=variables,
-            response_class=response_class,
-            model=model,
-            provider=provider,
-        )
-        handoff_prompts = []
-        if _prompt.handoffs:  # note handoff prompts cannot be used as agents
-            for handoff in _prompt.handoffs:
-                # need to create a new prompt for each handoff
-                handoff_prompt = await PromptAgent.create(
-                    name=handoff, model=model, provider=provider
-                )
-                handoff_prompts.append(handoff_prompt)
-        instance = cls(
-            name,
-            instructions=_prompt.instructions,
-            model=_prompt.model,
-            handoffs=handoff_prompts,
-            output_type=_prompt.response_class,
-        )
-        instance._prompt = _prompt
-        return instance
-
-    async def run(self, variables: dict = None):
-        # Re-generate prompt from the original template for each invocation
-
-        # get raw template; fall back to current prompt if template missing
-        if variables:
-            self._prompt.variables = variables
-            self._prompt._apply_variables()
-        result = await Runner.run(self, self._prompt.prompt)
-        return result

@@ -13,7 +13,7 @@ from app.chat import router as chat_router
 from fastapi.responses import HTMLResponse
 from fastapi import APIRouter
 
-application = FastAPI(title="FastAPI Responses Demo", version="1.0", debug=config.DEBUG)
+application = FastAPI(title="FastAPI Responses API Demo", version="1.0", debug=config.DEBUG)
 
 application.add_middleware(
     CORSMiddleware,
