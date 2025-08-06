@@ -13,6 +13,12 @@ from app.chat import router as chat_router
 from fastapi.responses import HTMLResponse
 from fastapi import APIRouter
 
+# Register tools at application startup
+from app.ai_tools import register_tools, generate_client_revenue_data
+from app.tools import webscrape
+register_tools("webscrape", function=webscrape)
+register_tools("generate_client_revenue_data", function=generate_client_revenue_data)
+
 application = FastAPI(title="FastAPI Responses API Demo", version="1.0", debug=config.DEBUG)
 
 application.add_middleware(

@@ -2,7 +2,8 @@ import importlib
 import inspect
 import logging
 import os
-from typing import Any, Callable, ClassVar, Dict, Optional
+import random
+from typing import Any, Callable, ClassVar, Dict, Optional, List
 
 import html2text
 import httpx
@@ -259,3 +260,85 @@ async def webscrape(info: WebScrapeParameters):
         return out[0 : info.max_length]
     else:
         return out
+
+
+class RevenueDataRequest(BaseModel):
+    """Request model for generating client revenue data."""
+    client_name: str = Field(..., description="The name of the client")
+    year: int = Field(..., description="The year for which to generate revenue data", ge=2020, le=2030)
+
+
+class MonthlyRevenue(BaseModel):
+    """Monthly revenue data point."""
+    month: int = Field(..., description="Month number (1-12)", ge=1, le=12)
+    month_name: str = Field(..., description="Month name (January, February, etc.)")
+    revenue: float = Field(..., description="Revenue amount in USD")
+
+
+class RevenueDataResponse(BaseModel):
+    """Response model for client revenue data."""
+    client_name: str = Field(..., description="The client name")
+    year: int = Field(..., description="The year")
+    total_revenue: float = Field(..., description="Total annual revenue")
+    average_monthly_revenue: float = Field(..., description="Average monthly revenue")
+    monthly_data: List[MonthlyRevenue] = Field(..., description="Monthly revenue breakdown")
+
+
+async def generate_client_revenue_data(request: RevenueDataRequest) -> RevenueDataResponse:
+    """
+    Generate mock client revenue data for demonstration purposes.
+    
+    Creates 12 months of revenue data starting with a random base amount (1-10 million)
+    and then varying each subsequent month by +/- 50% of the previous month.
+    
+    Args:
+        request: RevenueDataRequest containing client_name and year
+        
+    Returns:
+        RevenueDataResponse with monthly revenue breakdown and summary statistics
+        
+    Example:
+        request = RevenueDataRequest(client_name="Acme Corp", year=2024)
+        result = await generate_client_revenue_data(request)
+    """
+    month_names = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ]
+    
+    # Start with a random base revenue between 1-10 million
+    base_revenue = random.uniform(1_000_000, 10_000_000)
+    
+    monthly_data = []
+    current_revenue = base_revenue
+    
+    for month in range(1, 13):
+        # For the first month, use the base revenue
+        if month == 1:
+            revenue = base_revenue
+        else:
+            # Vary by +/- 50% of the previous month
+            variation = random.uniform(-0.5, 0.5)
+            revenue = current_revenue * (1 + variation)
+            # Ensure revenue doesn't go negative
+            revenue = max(revenue, 100_000)
+        
+        monthly_data.append(MonthlyRevenue(
+            month=month,
+            month_name=month_names[month - 1],
+            revenue=round(revenue, 2)
+        ))
+        
+        current_revenue = revenue
+    
+    # Calculate summary statistics
+    total_revenue = sum(data.revenue for data in monthly_data)
+    average_monthly_revenue = total_revenue / 12
+    
+    return RevenueDataResponse(
+        client_name=request.client_name,
+        year=request.year,
+        total_revenue=round(total_revenue, 2),
+        average_monthly_revenue=round(average_monthly_revenue, 2),
+        monthly_data=monthly_data
+    )

@@ -1,5 +1,6 @@
 fastapi
-uvicorn
+uvicorn[standard]
+websockets
 openai
 aiofiles
 jinja2
@@ -9,3 +10,5 @@ markdown
 html2text
 pydantic
 python-multipart
+reportlab
+weasyprint
