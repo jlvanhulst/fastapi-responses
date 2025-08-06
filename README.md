@@ -97,8 +97,9 @@ Help the user with their coding question: {{content}}
 
 ### Demo Endpoints
 - `GET /demo/list_prompts` - List all available prompts
-- `POST /demo/prompt/{name}` - Execute a specific prompt
-- `POST /demo/upload_file` - Upload files for processing
+- `POST /demo/prompt/{name}` - Execute a specific prompt with JSON payload
+- `POST /demo/prompt_with_files/{name}` - Execute a prompt with embedded files (recommended)
+- `POST /demo/upload_file` - Upload a single file and get file_id
 
 ### File Management
 - `POST /chat/upload` - Upload files for use in conversations
@@ -146,6 +147,42 @@ Features include:
 2. **Research Assistant**: Web search and scraping for information gathering
 3. **Data Analyst**: Upload CSV files and create visualizations
 4. **Content Creator**: Generate and refine content with specific guidelines
+
+## ⚠️ Production Considerations
+
+**Important**: The demo endpoints in this project wait for AI responses before returning (synchronous). This is only suitable for local development and demos.
+
+### For Production Applications:
+
+**Don't do this (demo approach):**
+```python
+# Blocks for 10-60+ seconds waiting for AI response
+response = await prompt.run(...)
+return {"result": response}  # Client waits the entire time
+```
+
+**Do this instead (production approach):**
+```python
+# 1. Return immediately with job ID
+job_id = str(uuid.uuid4())
+return {"job_id": job_id, "status": "processing"}
+
+# 2. Process asynchronously in background
+asyncio.create_task(process_ai_request(job_id, prompt_data))
+
+# 3. Save results when complete + notify client via:
+#    - Webhook callback
+#    - Polling endpoint (/jobs/{job_id}/status)
+#    - WebSocket connection
+#    - Database + real-time updates
+```
+
+### Recommended Production Architecture:
+- **Queue System**: Redis/RabbitMQ for job queuing
+- **Background Workers**: Celery/RQ for async processing
+- **Database**: Store job status and results
+- **Notifications**: WebSockets, webhooks, or Server-Sent Events
+- **Caching**: Cache responses for similar requests
 
 ## Development
 
