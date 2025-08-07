@@ -8,7 +8,7 @@ import aiofiles
 from fastapi import HTTPException
 from openai import AsyncOpenAI
 
-from app.ai_tools import FunctionRequest, JsonResponse, frommarkdown, handle_openai_function
+from app.ai_tools import FunctionRequest, JsonResponse, handle_openai_function
 
 PROMPTS_DIR = os.getenv("PROMPTS_DIR", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "prompts"))
 AI_MODEL = os.getenv("AI_MODEL", "openai/gpt-4.1")
@@ -252,12 +252,6 @@ class Prompt:
         return prompt
 
     @property
-    def frommarkdown(self, response: str = None):
-        if response is None:
-            response = self.response
-        return frommarkdown(response)
-
-    @property
     def asjson(self):
         return self.response.model_dump()
 
@@ -389,5 +383,22 @@ class Prompt:
                                         "container_id": annotation.container_id,
                                         "filename": annotation.filename,
                                     })
+            elif output.type == "image_generation_call":
+                # Handle embedded images from image generation
+                # Extract image data and format
+                image_data = output.result  # This should be base64 encoded
+                image_format = "png"  # Default to PNG
+
+                # Generate a filename
+                filename = f"{output.id}.{image_format}"
+
+                # Add to output_files list with embedded base64 data
+                self.output_files.append({
+                    "type": "embedded_image",
+                    "filename": filename,
+                    "format": image_format,
+                    "base64_data": image_data,  # Keep the base64 data directly
+                    "content_type": f"image/{image_format}",
+                })
 
         return response.output_text

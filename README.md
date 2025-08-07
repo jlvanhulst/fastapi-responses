@@ -4,7 +4,8 @@ A FastAPI implementation showcasing the OpenAI Responses API with a smart wrappe
 
 ## Overview
 
-This project demonstrates how to build a clean, structured AI application using the OpenAI Responses API. It features a powerful prompt system that allows you to define AI behavior, tools, and conversation flow through simple markdown files.
+This project demonstrates how to build a clean, structured AI application using the OpenAI Responses API. It features a powerful "Prompt class that allows you to define AI behavior, tools, and conversation flow through simple markdown files per Prompt. (This was inspired by the OpenAI Assistants, and now the OpenaI Prompt objects)
+After using both for a while I decided that i do want all my prompts in Github - but not in code.
 
 ## Key Features
 
@@ -77,15 +78,15 @@ Help the user with their coding question: {{content}}
 
 - **`@@ Instructions`**: System prompt defining the AI's role and behavior
 - **`@@ Model`**: Which model to use (e.g., `openai/gpt-4.1`)
-- **`@@ Tools`**: Available tools (`code_interpreter`, `web_search`, `webscrape`, custom functions)
+- **`@@ Tools`**: Available tools (`code_interpreter`, `web_search`, `image_generation`, custom functions)
 - **`@@ Prompt`**: The template with `{{content}}` placeholders for user input
 
 ### Built-in Tools
 
 - **`code_interpreter`**: Execute Python code, create plots, analyze data
 - **`web_search`**: Search the web for current information
-- **`webscrape`**: Scrape content from websites
-- **Custom Tools**: Add your own functions in `app/tools.py`
+- **`image_generation`**: Generate images using DALL-E
+- **Custom Tools**: Add your own functions in `app/tools.py` (e.g., `webscrape`)
 
 ## API Endpoints
 
@@ -123,68 +124,21 @@ Help the user with their coding question: {{content}}
 
 ## Key Components
 
-### Prompt Class
+### Prompt Class (ai_processor.py and ai_tools.py)
 The core `Prompt` class handles:
 - Loading and parsing markdown prompt files
 - Managing conversation threads with response IDs
 - Tool execution and file handling
 - Model switching and configuration
 
-### PromptHandler
-A singleton that manages:
-- Prompt instances and caching
-- File uploads and storage
-- Response history for conversation continuity
-
-### Chat Interface
+### Test / Demo Chat Interface (chat.py)
 Features include:
-- Real-time prompt selection and configuration display
+- Prompt file selection and configuration display
 - File upload and inline image viewing
 - Conversation history with thread persistence
-- Clean, responsive UI with sidebar navigation
+- Ability to talk to your prompt like in the OpenAI Playground but with your own functions and prompt files.
 
-## Example Use Cases
 
-1. **Code Assistant**: Help with programming questions using code interpreter
-2. **Research Assistant**: Web search and scraping for information gathering
-3. **Data Analyst**: Upload CSV files and create visualizations
-4. **Content Creator**: Generate and refine content with specific guidelines
-
-## ⚠️ Production Considerations
-
-**Important**: The demo endpoints in this project wait for AI responses before returning (synchronous). This is only suitable for local development and demos.
-
-### For Production Applications:
-
-**Don't do this (demo approach):**
-```python
-# Blocks for 10-60+ seconds waiting for AI response
-response = await prompt.run(...)
-return {"result": response}  # Client waits the entire time
-```
-
-**Do this instead (production approach):**
-```python
-# 1. Return immediately with job ID
-job_id = str(uuid.uuid4())
-return {"job_id": job_id, "status": "processing"}
-
-# 2. Process asynchronously in background
-asyncio.create_task(process_ai_request(job_id, prompt_data))
-
-# 3. Save results when complete + notify client via:
-#    - Webhook callback
-#    - Polling endpoint (/jobs/{job_id}/status)
-#    - WebSocket connection
-#    - Database + real-time updates
-```
-
-### Recommended Production Architecture:
-- **Queue System**: Redis/RabbitMQ for job queuing
-- **Background Workers**: Celery/RQ for async processing
-- **Database**: Store job status and results
-- **Notifications**: WebSockets, webhooks, or Server-Sent Events
-- **Caching**: Cache responses for similar requests
 
 ## Development
 
@@ -286,7 +240,24 @@ async def generate_client_revenue_data(request: RevenueDataRequest) -> RevenueDa
 1. Create `prompts/my_prompt.md`
 2. Define the sections as shown above
 3. Restart the application
-4. Select your prompt in the chat interface
+4. Select your prompt in the chat interface to test it.
+
+
+
+## Production Considerations
+
+**Important**: The demo endpoints in this project wait for AI responses before returning (synchronous). This is only suitable for local development and demos.
+
+### For Production Applications:
+
+**Don't do this (demo approach):**
+```python
+# Blocks for 10-60+ seconds waiting for AI response
+response = await prompt.run(...)
+return {"result": response}  # Client waits the entire time
+```
+
+
 
 ## License
 

@@ -5,7 +5,7 @@ You are a helpful chat system that provides accurate and concise information. An
 openai/gpt-4.1
 
 @@ Tools
-webscrape
+webscrape, image_generation
 
 @@ Prompt
 {{content}}

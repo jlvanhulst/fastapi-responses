@@ -236,7 +236,7 @@
                     
                 case 'response':
                     hideTypingIndicator();
-                    appendMessage('🤖', marked.parse(data.content), data.files || []);
+                    appendMessage('🤖', data.content, data.files || []);
                     // Update local storage with the new response ID for conversation continuity
                     if (data.response_id) {
                         localStorage.setItem('previous_response_id', data.response_id);
@@ -395,7 +395,7 @@
                 const files = responseData.files || [];
                 
                 // Display the response
-                appendMessage('🤖', marked.parse(messageContent), files);
+                appendMessage('🤖', messageContent, files);
                 
                 // Scroll to bottom
                 chatBox.scrollTop = chatBox.scrollHeight;
@@ -404,34 +404,92 @@
             }
         }
 
+        function processMarkdownWithFiles(markdownText, files = []) {
+            // Convert markdown to HTML
+            let htmlContent = marked.parse(markdownText);
+            
+            // Find image references in HTML and replace with actual file content
+            const imgPattern = /<img[^>]*src=["']([^"']+)["'][^>]*>/g;
+            const referencedFiles = new Set();
+            
+            htmlContent = htmlContent.replace(imgPattern, (match, src) => {
+                // Extract filename from src (could be sandbox:/mnt/data/filename or just filename)
+                const filename = src.split('/').pop();
+                
+                // Find matching file
+                const matchingFile = files.find(file => {
+                    const fileName = file.filename || file.name || file.file_id;
+                    return fileName === filename;
+                });
+                
+                if (matchingFile) {
+                    referencedFiles.add(matchingFile);
+                    
+                    // Create appropriate URL
+                    let fileUrl;
+                    if (matchingFile.type === 'embedded_image' && matchingFile.base64_data) {
+                        fileUrl = `data:${matchingFile.content_type || 'image/png'};base64,${matchingFile.base64_data}`;
+                    } else {
+                        fileUrl = `/chat/files/${matchingFile.container_id}/${matchingFile.file_id}`;
+                    }
+                    
+                    // Extract alt text from original match
+                    const altMatch = match.match(/alt=["']([^"']*)["']/);
+                    const altText = altMatch ? altMatch[1] : filename;
+                    
+                    return `<img src="${fileUrl}" alt="${altText}" class="max-w-full h-auto border rounded my-2" />`;
+                }
+                
+                // Return original if no match found
+                return match;
+            });
+            
+            // Collect unreferenced files (only show images with ig_ IDs or similar patterns)
+            const unreferencedFiles = files.filter(file => {
+                if (referencedFiles.has(file)) return false;
+                
+                const fileName = file.filename || file.name || file.file_id || '';
+                const isImage = file.type === 'embedded_image' ||
+                               fileName.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i) || 
+                               (file.content_type && file.content_type.startsWith('image/')) ||
+                               (file.file_id && (file.file_id.includes('image') || 
+                                                file.file_id.includes('plot') ||
+                                                file.file_id.includes('chart')));
+                
+                // Only show unreferenced images if they have special IDs like ig_ 
+                return isImage && (fileName.startsWith('ig_') || 
+                                  (file.file_id && file.file_id.startsWith('ig_')));
+            });
+            
+            return { htmlContent, unreferencedFiles };
+        }
+
         function appendMessage(sender, message, files = []) {
             const messageElement = document.createElement('div');
             messageElement.classList.add('mb-2');
             
-            let filesHtml = '';
-            if (files && files.length > 0) {
-                filesHtml = '<div class="mt-2">';
-                files.forEach(file => {
-                    const fileUrl = `/chat/files/${file.container_id}/${file.file_id}`;
-                    const fileName = file.filename || file.name || file.file_id;
-                    
-                    // Check if it's likely an image based on filename, content_type, or common patterns
-                    const isImage = fileName.match(/\.(jpg|jpeg|png|gif|bmp|webp|svg)$/i) || 
-                                   (file.content_type && file.content_type.startsWith('image/')) ||
-                                   file.file_id.includes('image') || 
-                                   file.file_id.includes('plot') ||
-                                   file.file_id.includes('chart');
-                    
-                    if (isImage) {
-                        filesHtml += `<div class="my-2"><img src="${fileUrl}" alt="Generated image" class="max-w-full h-auto border rounded" /></div>`;
+            // Process markdown with file embedding
+            const { htmlContent, unreferencedFiles } = processMarkdownWithFiles(message, files);
+            
+            // Create HTML for unreferenced files (only special IDs like ig_)
+            let unreferencedHtml = '';
+            if (unreferencedFiles && unreferencedFiles.length > 0) {
+                unreferencedHtml = '<div class="mt-2 border-t pt-2"><small class="text-gray-600">Additional images:</small>';
+                unreferencedFiles.forEach(file => {
+                    let fileUrl;
+                    if (file.type === 'embedded_image' && file.base64_data) {
+                        fileUrl = `data:${file.content_type || 'image/png'};base64,${file.base64_data}`;
                     } else {
-                        filesHtml += `<div class="my-1"><a href="${fileUrl}" target="_blank" class="text-blue-600 hover:text-blue-800 underline">📎 ${fileName}</a></div>`;
+                        fileUrl = `/chat/files/${file.container_id}/${file.file_id}`;
                     }
+                    
+                    const fileName = file.filename || file.name || file.file_id;
+                    unreferencedHtml += `<div class="my-2"><img src="${fileUrl}" alt="${fileName}" class="max-w-full h-auto border rounded" /></div>`;
                 });
-                filesHtml += '</div>';
+                unreferencedHtml += '</div>';
             }
             
-            messageElement.innerHTML = `<strong>${sender}:</strong>\n<span class="msg">${message}</span>${filesHtml}`;
+            messageElement.innerHTML = `<strong>${sender}:</strong>\n<div class="msg">${htmlContent}</div>${unreferencedHtml}`;
             chatBox.appendChild(messageElement);
             chatBox.scrollTop = chatBox.scrollHeight;
             const newMessage = chatBox.children[chatBox.children.length - 1];

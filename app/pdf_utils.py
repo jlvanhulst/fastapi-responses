@@ -579,24 +579,39 @@ class PDFGenerator:
         for file_ref in file_references:
             if 'file_info' in file_ref:
                 file_info = file_ref['file_info']
-
-                # Download file content
-                file_content = await self.download_openai_file(
-                    file_info['container_id'],
-                    file_info['file_id']
-                )
-
-                if file_content:
-                    # Save to temporary file
-                    suffix = '.png'  # Default to PNG for images
-                    if file_info.get('filename'):
-                        _, ext = os.path.splitext(file_info['filename'])
-                        if ext:
-                            suffix = ext
-
+                
+                # Check if this is an embedded image with base64 data
+                if file_info.get('type') == 'embedded_image' and file_info.get('base64_data'):
+                    # Create temp file from base64 data
+                    import base64
+                    image_bytes = base64.b64decode(file_info['base64_data'])
+                    
+                    # Determine file extension
+                    image_format = file_info.get('format', 'png')
+                    suffix = f'.{image_format}'
+                    
                     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-                        temp_file.write(file_content)
+                        temp_file.write(image_bytes)
                         file_ref['temp_path'] = temp_file.name
+                        logger.info(f"Created temp file from base64 data: {temp_file.name}")
+                else:
+                    # Download file content from OpenAI
+                    file_content = await self.download_openai_file(
+                        file_info['container_id'],
+                        file_info['file_id']
+                    )
+
+                    if file_content:
+                        # Save to temporary file
+                        suffix = '.png'  # Default to PNG for images
+                        if file_info.get('filename'):
+                            _, ext = os.path.splitext(file_info['filename'])
+                            if ext:
+                                suffix = ext
+
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+                            temp_file.write(file_content)
+                            file_ref['temp_path'] = temp_file.name
 
     def cleanup_temp_files(self, file_references: List[Dict]):
         """Clean up temporary files created during PDF generation."""
