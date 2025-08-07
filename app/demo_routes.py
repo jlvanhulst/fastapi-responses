@@ -5,11 +5,11 @@ Available endpoints:
 - /demo/prompt/{prompt_name} - Execute a prompt with JSON payload
 - /demo/upload_file - Upload a single file and get file_id
 - /demo/prompt_with_files/{prompt_name} - Execute a prompt with embedded files (recommended)
-- /demo/graph_report?prompt=... - Generate PDF report with embedded charts using graph_demo prompt
+- /demo/graph_report?query=... - Generate PDF report with embedded charts using graph_demo prompt
 
 """
 from fastapi.responses import JSONResponse, HTMLResponse, Response
-from fastapi import UploadFile, APIRouter, Form, Query
+from fastapi import UploadFile, APIRouter, Form
 from typing import List, Optional
 
 from app.chat import PromptRequest, get_prompt_by_name, generate_response
@@ -166,7 +166,7 @@ async def run_prompt_with_files(
 
 
 @router.get("/graph_report", response_class=Response)
-async def generate_graph_report_pdf(prompt: str = Query(..., description="The prompt/question for generating graphs and charts")):
+async def generate_graph_report_pdf(query: str):
     """
     Generate a PDF report using the graph_demo prompt with embedded charts and graphs.
 
@@ -177,7 +177,7 @@ async def generate_graph_report_pdf(prompt: str = Query(..., description="The pr
     4. Returns the complete PDF as a downloadable file
 
     **Example Usage:**
-    GET /demo/graph_report?prompt=Create a revenue chart for Acme Corp for 2024 and put it on a billboard
+    GET /demo/graph_report?query=Create a revenue chart for Acme Corp for 2024 and put it on a billboard
 
     **Response:**
     Returns a PDF file with the generated content and embedded charts/graphs.
@@ -191,14 +191,19 @@ async def generate_graph_report_pdf(prompt: str = Query(..., description="The pr
     4. Notify the client via webhook, polling endpoint, or WebSocket
 
     This synchronous approach is only suitable for demos/local development.
+    
+    Please note that we are using gpt-4o in the prompt on purpose because it currently still seems to be 
+    the only model to consistently put the file name in the correct place as an embed in the 
+    markdown output.
+    
     """
     try:
-        logger.info(f"Generating PDF report for prompt: {prompt}")
+        logger.info(f"Generating PDF report for prompt: {query}")
 
         # Generate response using the graph_demo prompt
         response = await generate_response(
             prompt_name="graph_demo",
-            content=prompt,
+            content=query,
             previous_response_id=None
         )
 
